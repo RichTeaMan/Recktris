@@ -17,10 +17,11 @@ class PolytrisGame {
 
     gameGrid: any[][];
     pieces: Poly[];
+    queuedPieces: Poly[];
+    queuedPiecesFillSize = 10;
     mainGtx: CanvasRenderingContext2D;
     previewGtx: CanvasRenderingContext2D;
     currentPiece: Poly;
-    nextPiece: Poly;
 
     removingLinesFrames = 0;
     linesToRemove: number[] = null;
@@ -31,7 +32,7 @@ class PolytrisGame {
     gtxName = "gtx";
     previewGtxName = "preview_gtx";
 
-    onPreviewPieceCreated: (poly: Poly) => void;
+    onPieceQueueFilled: (tick: number, polyQueue: Poly[]) => void;
 
     /** The total number of frames to remove lines for. */
     removingLinesFramesDelay = 50;
@@ -239,7 +240,8 @@ class PolytrisGame {
         }
 
         this.renderGame(this.mainGtx, this.gameGrid, this.currentPiece);
-        PolytrisGame.renderPreview(this.previewGtx, PolytrisGame.createGrid(this.nextPiece.length, this.nextPiece.length), this.nextPiece.createPreviewPiece());
+        var nextPiece = this.queuedPieces[0];
+        PolytrisGame.renderPreview(this.previewGtx, PolytrisGame.createGrid(nextPiece.length, nextPiece.length), nextPiece.createPreviewPiece());
 
         const linesClearedElement = document.getElementById("lines_cleared");
         if (linesClearedElement) {
@@ -267,18 +269,14 @@ class PolytrisGame {
             }
             this.checkLines();
 
-            this.currentPiece = this.nextPiece;
+            this.currentPiece = this.dequeuePiece();
             // translate piece to middle of the grid
             if (!this.moveCurrentPiece(this.gridWidth / 2, 0)) {
                 // game over handled by next tick so a render can happen.
                 this.gameOver = true;
-            } else {
-                this.nextPiece = this.spawnPiece();
-
-                if (this.onPreviewPieceCreated) {
-                    this.onPreviewPieceCreated(this.nextPiece);
-                }
             }
+        } else {
+            this.fillPieceQueue();
         }
     }
 
@@ -464,11 +462,32 @@ class PolytrisGame {
         this.previewGtx = (<HTMLCanvasElement>document.getElementById(this.previewGtxName)).getContext("2d");
     }
 
+    fillPieceQueue() {
+        if (!this.queuedPieces) {
+            this.queuedPieces = new Array<Poly>();
+        }
+
+        var piecesAdded = false;
+        while (this.queuedPieces.length < this.queuedPiecesFillSize) {
+            this.queuedPieces.push(this.spawnPiece());
+            piecesAdded = true;
+        }
+
+        if (piecesAdded && this.onPieceQueueFilled) {
+            this.onPieceQueueFilled(this.currentTick, this.queuedPieces);
+        }
+    }
+
+    dequeuePiece(): Poly {
+        var next = this.queuedPieces.shift();
+        return next;
+    }
+
     startGame() {
         this.rebuildGtx();
-        this.currentPiece = this.spawnPiece();
+        this.fillPieceQueue();
+        this.currentPiece = this.dequeuePiece();
         this.moveCurrentPiece(this.gridWidth / 2, 0);
-        this.nextPiece = this.spawnPiece();
         setInterval(this.tick, 17);
     }
 

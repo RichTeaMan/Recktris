@@ -121,19 +121,25 @@
 
     });
 
-    game1.onPreviewPieceCreated = function (poly) {
+    game1.onPieceQueueFilled = function (tick, polyQueue) {
 
-        var polyJson = JSON.stringify(poly);
+        var polyJson = JSON.stringify(polyQueue);
         connection.invoke("SendPreviewPiece", "test-user", `${polyJson}`).catch(err => console.error(err.toString()));
     };
 
+    var game2Start = false;
     connection.on("ReceivePreviewPiece", (user, message) => {
-        const polyJson = JSON.parse(message);
-        const poly = Poly.fromPolyJson(polyJson);
-        console.log(poly);
-        if (poly) {
-            game2.nextPiece = poly;
+        const polyQueueJson = JSON.parse(message);
+        const polyQueue = Poly.fromPolyJsonArray(polyQueueJson);
+        if (polyQueue) {
+
+            game2.queuedPieces = polyQueue;
+            if (!game2Start) {
+                game2.startGame();
+                game2Start = true;
+            }
         }
+
 
     });
 
@@ -179,9 +185,9 @@
         connection.invoke("SendMessage", "test-user", `${key}`).catch(err => console.error(err.toString()));
     }
 
-    connection.start().catch(err => console.error(err.toString()));
+    connection.start().catch(err => console.error(err.toString())).then(function () {
 
-    game1.startGame();
-    game2.startGame();
+        game1.startGame();
+    });
 
 </script>

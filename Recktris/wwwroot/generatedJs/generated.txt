@@ -1,0 +1,1 @@
+Generated JS from Typescript will be saved here. They should not be commited.

@@ -12,7 +12,7 @@
 <div id="status"></div>
 <div id="game_row">
     <div class="game_panel main_panel panel">
-        <canvas id="gtx" width="350" height="630"></canvas>
+        <canvas id="gtx1" width="350" height="630"></canvas>
     </div>
     <div class="info_panel panel">
         <div class="info_panel">
@@ -28,63 +28,67 @@
             <p id="lines_cleared" class="right-align"></p>
         </div>
         <div class="game_panel preview_panel">
-            <canvas id="preview_gtx" width="140" height="140"></canvas>
+            <canvas id="preview_gtx1" width="140" height="140"></canvas>
         </div>
     </div>
+
+    <div class="game_panel main_panel panel">
+        <canvas id="gtx2" width="350" height="630"></canvas>
+    </div>
+    <div class="info_panel panel">
+        <div class="info_panel">
+            <p>Score:</p>
+            <p id="score" class="right-align"></p>
+        </div>
+        <div class="info_panel">
+            <p>Level:</p>
+            <p id="level" class="right-align"></p>
+        </div>
+        <div class="info_panel">
+            <p>Lines:</p>
+            <p id="lines_cleared" class="right-align"></p>
+        </div>
+        <div class="game_panel preview_panel">
+            <canvas id="preview_gtx2" width="140" height="140"></canvas>
+        </div>
+    </div>
+</div>
+
+<h2>Messages List</h2>
+<div>
+    <ul id="messagesList"></ul>
 </div>
 <script src="~/generatedJs/utilities.js"></script>
 <script src="~/generatedJs/poly.js"></script>
 <script src="~/generatedJs/game.js"></script>
+<script src="~/lib/signalr/signalr.js"></script>
 <script>
 
+    var pieces = Poly.fromPolyJsonArray([{ "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": -1, "y": 0 }], "_hashCode": -2074794077 }, { "blocks": [{ "x": -1, "y": 0 }, { "x": 0, "y": 0 }, { "x": -1, "y": 1 }, { "x": 1, "y": 0 }], "_hashCode": 493316036 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": 1, "y": 1 }], "_hashCode": 364263108 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": 1, "y": -1 }], "_hashCode": 1459856386 }, { "blocks": [{ "x": 0, "y": -1 }, { "x": 1, "y": -1 }, { "x": 0, "y": 0 }, { "x": 0, "y": 1 }], "_hashCode": -2054643644 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": -1, "y": 1 }], "_hashCode": 45493122 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": -1, "y": 0 }, { "x": 2, "y": 0 }], "_hashCode": 406158850 }]);
 
-    var links = "Poly size: ";
-    for (var i = 1; i < 10; i++) {
-        links += `<a href="${window.location.pathname}?polySize=${i}">${i}</a>`
-    }
-    $("#game_links").html(links);
+    var game1 = new PolytrisGame(10, 18, pieces);
+    game1.gtxName = "gtx1";
+    game1.previewGtxName = "preview_gtx1";
 
-    var polySize = 4;
-    var polySizeQuery = getQueryParam("polySize");
-    var polySize = parseInt(polySizeQuery, 10);
-    if (isNaN(polySize)) {
-        polySize = 4;
-    }
+    var game2 = new PolytrisGame(10, 18, pieces);
+    game2.gtxName = "gtx2";
+    game2.previewGtxName = "preview_gtx2";
 
-    var pieces = Poly.fromPolyJson([{ "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": -1, "y": 0 }], "_hashCode": -2074794077 }, { "blocks": [{ "x": -1, "y": 0 }, { "x": 0, "y": 0 }, { "x": -1, "y": 1 }, { "x": 1, "y": 0 }], "_hashCode": 493316036 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": 1, "y": 1 }], "_hashCode": 364263108 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": 1, "y": -1 }], "_hashCode": 1459856386 }, { "blocks": [{ "x": 0, "y": -1 }, { "x": 1, "y": -1 }, { "x": 0, "y": 0 }, { "x": 0, "y": 1 }], "_hashCode": -2054643644 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": -1, "y": 1 }], "_hashCode": 45493122 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": -1, "y": 0 }, { "x": 2, "y": 0 }], "_hashCode": 406158850 }]);
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/gameHub")
+        .build();
 
-    var game = new PolytrisGame(10, 18, pieces);
-    console.log("game start")
-    console.log(pieces);
-    game.startGame();
-    console.log("Game started");
-
-    function resize() {
-        var currentCanvasHeight = $("#game_row").height();
-
-        var blockLength = currentCanvasHeight / game.gridHeight;
-
-        var gameHeight = blockLength * game.gridHeight;
-        var gameWidth = blockLength * game.gridWidth;
-
-        console.log(`width: ${gameWidth} - height: ${gameHeight}`);
-        $("#gtx").attr("height", gameHeight);
-        $("#gtx").attr("width", gameWidth);
-        game.rebuildGtx();
-    };
-    window.onresize = resize;
-    resize();
-
-    window.onkeydown = function (e) {
-        var key = e.keyCode ? e.keyCode : e.which;
+    connection.on("ReceiveMessage", (user, message) => {
+        const msg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        var key = parseInt(msg, 10);
 
         var xMod = 0;
         var yMod = 0;
 
-        if (!game.paused && !game.gameOver && game.removingLinesFrames == 0) {
+        if (!isNaN(key) && !game2.paused && !game2.gameOver && game2.removingLinesFrames == 0) {
             // up or space
             if (key == 38 || key == 32) {
-                game.dropPiece();
+                game2.dropPiece();
             }
             // down
             else if (key == 40) {
@@ -100,19 +104,84 @@
             }
             // X
             else if (key == 88) {
-                game.rotateCurrentPieceClockwise();
+                game2.rotateCurrentPieceClockwise();
             }
             // Z
             else if (key == 90) {
-                game.rotateCurrentPieceAntiClockwise();
+                game2.rotateCurrentPieceAntiClockwise();
             }
         }
         // P
         if (key == 80) {
-            game.paused = !game.paused;
+            game2.paused = !game2.paused;
         }
         if (xMod != 0 || yMod != 0) {
-            game.moveCurrentPiece(xMod, yMod);
+            game2.moveCurrentPiece(xMod, yMod);
         }
+
+    });
+
+    game1.onPreviewPieceCreated = function (poly) {
+
+        var polyJson = JSON.stringify(poly);
+        connection.invoke("SendPreviewPiece", "test-user", `${polyJson}`).catch(err => console.error(err.toString()));
+    };
+
+    connection.on("ReceivePreviewPiece", (user, message) => {
+        const polyJson = JSON.parse(message);
+        const poly = Poly.fromPolyJson(polyJson);
+        console.log(poly);
+        if (poly) {
+            game2.nextPiece = poly;
+        }
+
+    });
+
+    window.onkeydown = function (e) {
+        var key = e.keyCode ? e.keyCode : e.which;
+
+        var xMod = 0;
+        var yMod = 0;
+
+        if (!game1.paused && !game1.gameOver && game1.removingLinesFrames == 0) {
+            // up or space
+            if (key == 38 || key == 32) {
+                game1.dropPiece();
+            }
+            // down
+            else if (key == 40) {
+                yMod++;
+            }
+            // left
+            else if (key == 37) {
+                xMod--;
+            }
+            // right
+            else if (key == 39) {
+                xMod++;
+            }
+            // X
+            else if (key == 88) {
+                game1.rotateCurrentPieceClockwise();
+            }
+            // Z
+            else if (key == 90) {
+                game1.rotateCurrentPieceAntiClockwise();
+            }
+        }
+        // P
+        if (key == 80) {
+            game1.paused = !game1.paused;
+        }
+        if (xMod != 0 || yMod != 0) {
+            game1.moveCurrentPiece(xMod, yMod);
+        }
+        connection.invoke("SendMessage", "test-user", `${key}`).catch(err => console.error(err.toString()));
     }
+
+    connection.start().catch(err => console.error(err.toString()));
+
+    game1.startGame();
+    game2.startGame();
+
 </script>

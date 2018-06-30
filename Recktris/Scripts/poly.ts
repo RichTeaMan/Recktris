@@ -18,7 +18,7 @@ class Poly {
         this._hashCode = null;
     }
 
-    static fromPolyJson(polies: any): Poly[] {
+    static fromPolyJsonArray(polies: any): Poly[] {
 
         var result = new Array<Poly>();
         for (var i = 0; i < polies.length; i++) {
@@ -31,10 +31,20 @@ class Poly {
                 poly._hashCode = weakPoly._hashCode;
 
                 result.push(poly);
-            console.log(poly);
             }
         }
         return result;
+    }
+
+    static fromPolyJson(weakPoly: any): Poly {
+
+        var poly = null;
+        if (weakPoly !== undefined && "blocks" in weakPoly && "_hashCode" in weakPoly) {
+
+            poly = Poly.fromBlocks(weakPoly.blocks);
+            poly._hashCode = weakPoly._hashCode;
+        }
+        return poly;
     }
 
     static fromBlocks(blocks: Block[]): Poly {

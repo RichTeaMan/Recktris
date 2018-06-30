@@ -28,6 +28,11 @@ class PolytrisGame {
     pauseText = "Paused";
     gameOverText = "Game Over";
 
+    gtxName = "gtx";
+    previewGtxName = "preview_gtx";
+
+    onPreviewPieceCreated: (poly: Poly) => void;
+
     /** The total number of frames to remove lines for. */
     removingLinesFramesDelay = 50;
 
@@ -269,6 +274,10 @@ class PolytrisGame {
                 this.gameOver = true;
             } else {
                 this.nextPiece = this.spawnPiece();
+
+                if (this.onPreviewPieceCreated) {
+                    this.onPreviewPieceCreated(this.nextPiece);
+                }
             }
         }
     }
@@ -451,9 +460,8 @@ class PolytrisGame {
     }
 
     rebuildGtx() {
-        this.mainGtx = (<HTMLCanvasElement>document.getElementById("gtx")).getContext("2d");
-        this.previewGtx = (<HTMLCanvasElement>document.getElementById("preview_gtx")).getContext("2d");
-
+        this.mainGtx = (<HTMLCanvasElement>document.getElementById(this.gtxName)).getContext("2d");
+        this.previewGtx = (<HTMLCanvasElement>document.getElementById(this.previewGtxName)).getContext("2d");
     }
 
     startGame() {

@@ -11,7 +11,11 @@ namespace Recktris.Hubs
         public async Task SendMessage(string user, string message)
         {
             await Clients.All.SendAsync("ReceiveMessage", user, message);
-            
+        }
+
+        public async Task SendPreviewPiece(string user, string message)
+        {
+            await Clients.All.SendAsync("ReceivePreviewPiece", user, message);
         }
 
     }

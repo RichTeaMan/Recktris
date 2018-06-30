@@ -31,6 +31,9 @@ class PolytrisGame {
 
     gtxName = "gtx";
     previewGtxName = "preview_gtx";
+    linesClearedName = "lines_cleared";
+    scoreName = "score";
+    levelName = "level";
 
     onPieceQueueFilled: (tick: number, polyQueue: Poly[]) => void;
 
@@ -243,17 +246,17 @@ class PolytrisGame {
         var nextPiece = this.queuedPieces[0];
         PolytrisGame.renderPreview(this.previewGtx, PolytrisGame.createGrid(nextPiece.length, nextPiece.length), nextPiece.createPreviewPiece());
 
-        const linesClearedElement = document.getElementById("lines_cleared");
+        const linesClearedElement = document.getElementById(this.linesClearedName);
         if (linesClearedElement) {
             linesClearedElement.innerHTML = this.linesCleared.toString();
         }
 
-        const scoreElement = document.getElementById("score");
+        const scoreElement = document.getElementById(this.scoreName);
         if (scoreElement) {
             scoreElement.innerHTML = this.score.toString();
         }
 
-        const levelElement = document.getElementById("level");
+        const levelElement = document.getElementById(this.levelName);
         if (levelElement) {
             levelElement.innerHTML = this.level.toString();
         }

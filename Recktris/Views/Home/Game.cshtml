@@ -17,15 +17,15 @@
     <div class="info_panel panel">
         <div class="info_panel">
             <p>Score:</p>
-            <p id="score" class="right-align"></p>
+            <p id="score_1" class="right-align"></p>
         </div>
         <div class="info_panel">
             <p>Level:</p>
-            <p id="level" class="right-align"></p>
+            <p id="level_1" class="right-align"></p>
         </div>
         <div class="info_panel">
             <p>Lines:</p>
-            <p id="lines_cleared" class="right-align"></p>
+            <p id="lines_cleared_1" class="right-align"></p>
         </div>
         <div class="game_panel preview_panel">
             <canvas id="preview_gtx1" width="140" height="140"></canvas>
@@ -38,15 +38,15 @@
     <div class="info_panel panel">
         <div class="info_panel">
             <p>Score:</p>
-            <p id="score" class="right-align"></p>
+            <p id="score_2" class="right-align"></p>
         </div>
         <div class="info_panel">
             <p>Level:</p>
-            <p id="level" class="right-align"></p>
+            <p id="level_2" class="right-align"></p>
         </div>
         <div class="info_panel">
             <p>Lines:</p>
-            <p id="lines_cleared" class="right-align"></p>
+            <p id="lines_cleared_2" class="right-align"></p>
         </div>
         <div class="game_panel preview_panel">
             <canvas id="preview_gtx2" width="140" height="140"></canvas>
@@ -88,10 +88,16 @@
         var game1 = new PolytrisGame(10, 18, pieces);
         game1.gtxName = "gtx1";
         game1.previewGtxName = "preview_gtx1";
+        game1.linesClearedName = "lines_cleared_1";
+        game1.scoreName = "score_1";
+        game1.levelName = "level_1";
 
         var game2 = new PolytrisGame(10, 18, pieces);
         game2.gtxName = "gtx2";
         game2.previewGtxName = "preview_gtx2";
+        game2.linesClearedName = "lines_cleared_2";
+        game2.scoreName = "score_2";
+        game2.levelName = "level_2";
 
 
         connection.on("ReceiveCommand", (user, message) => {

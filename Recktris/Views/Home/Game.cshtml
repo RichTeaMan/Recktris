@@ -1,0 +1,208 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h1>
+    <a href="/Polytris">Polytris</a>
+</h1>
+
+<div>
+    <p>Move pieces with the arrow keys. Rotate with Z and X. Pause with the P key.</p>
+</div>
+<div id="status">Waiting for game...</div>
+<div id="game_row" class="hidden">
+    <div class="game_panel main_panel panel">
+        <canvas id="gtx1" width="350" height="630"></canvas>
+    </div>
+    <div class="info_panel panel">
+        <div class="info_panel">
+            <p>Score:</p>
+            <p id="score" class="right-align"></p>
+        </div>
+        <div class="info_panel">
+            <p>Level:</p>
+            <p id="level" class="right-align"></p>
+        </div>
+        <div class="info_panel">
+            <p>Lines:</p>
+            <p id="lines_cleared" class="right-align"></p>
+        </div>
+        <div class="game_panel preview_panel">
+            <canvas id="preview_gtx1" width="140" height="140"></canvas>
+        </div>
+    </div>
+
+    <div class="game_panel main_panel panel">
+        <canvas id="gtx2" width="350" height="630"></canvas>
+    </div>
+    <div class="info_panel panel">
+        <div class="info_panel">
+            <p>Score:</p>
+            <p id="score" class="right-align"></p>
+        </div>
+        <div class="info_panel">
+            <p>Level:</p>
+            <p id="level" class="right-align"></p>
+        </div>
+        <div class="info_panel">
+            <p>Lines:</p>
+            <p id="lines_cleared" class="right-align"></p>
+        </div>
+        <div class="game_panel preview_panel">
+            <canvas id="preview_gtx2" width="140" height="140"></canvas>
+        </div>
+    </div>
+</div>
+
+<h2>Messages List</h2>
+<div>
+    <ul id="messagesList"></ul>
+</div>
+<script src="~/generatedJs/utilities.js"></script>
+<script src="~/generatedJs/poly.js"></script>
+<script src="~/generatedJs/game.js"></script>
+<script src="~/lib/signalr/signalr.js"></script>
+<script>
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/gameHub")
+        .build();
+
+    connection.on("GameReady", (user) => {
+        console.log("game ready")
+        $("#game_row").removeClass("hidden");
+        buildGames();
+
+    });
+
+    connection.start().catch(err => console.error(err.toString())).then(function () {
+
+        connection.invoke("Waiting", "@ViewBag.PlayerId", "w").catch(err => console.error(err.toString()));
+    });
+
+
+    function buildGames() {
+
+        var pieces = Poly.fromPolyJsonArray([{ "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": -1, "y": 0 }], "_hashCode": -2074794077 }, { "blocks": [{ "x": -1, "y": 0 }, { "x": 0, "y": 0 }, { "x": -1, "y": 1 }, { "x": 1, "y": 0 }], "_hashCode": 493316036 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": 1, "y": 1 }], "_hashCode": 364263108 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": 1, "y": -1 }], "_hashCode": 1459856386 }, { "blocks": [{ "x": 0, "y": -1 }, { "x": 1, "y": -1 }, { "x": 0, "y": 0 }, { "x": 0, "y": 1 }], "_hashCode": -2054643644 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": -1, "y": 1 }], "_hashCode": 45493122 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": -1, "y": 0 }, { "x": 2, "y": 0 }], "_hashCode": 406158850 }]);
+
+        var game1 = new PolytrisGame(10, 18, pieces);
+        game1.gtxName = "gtx1";
+        game1.previewGtxName = "preview_gtx1";
+
+        var game2 = new PolytrisGame(10, 18, pieces);
+        game2.gtxName = "gtx2";
+        game2.previewGtxName = "preview_gtx2";
+
+
+        connection.on("ReceiveCommand", (user, message) => {
+            const msg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            var key = parseInt(msg, 10);
+
+            var xMod = 0;
+            var yMod = 0;
+
+            if (!isNaN(key) && !game2.paused && !game2.gameOver && game2.removingLinesFrames == 0) {
+                // up or space
+                if (key == 38 || key == 32) {
+                    game2.dropPiece();
+                }
+                // down
+                else if (key == 40) {
+                    yMod++;
+                }
+                // left
+                else if (key == 37) {
+                    xMod--;
+                }
+                // right
+                else if (key == 39) {
+                    xMod++;
+                }
+                // X
+                else if (key == 88) {
+                    game2.rotateCurrentPieceClockwise();
+                }
+                // Z
+                else if (key == 90) {
+                    game2.rotateCurrentPieceAntiClockwise();
+                }
+            }
+            // P
+            if (key == 80) {
+                game2.paused = !game2.paused;
+            }
+            if (xMod != 0 || yMod != 0) {
+                game2.moveCurrentPiece(xMod, yMod);
+            }
+
+        });
+
+        game1.onPieceQueueFilled = function (tick, polyQueue) {
+
+            var polyJson = JSON.stringify(polyQueue);
+            connection.invoke("SendPreviewPiece", "@ViewBag.PlayerId", `${polyJson}`).catch(err => console.error(err.toString()));
+        };
+
+        var game2Start = false;
+        connection.on("ReceivePreviewPiece", (user, message) => {
+            const polyQueueJson = JSON.parse(message);
+            const polyQueue = Poly.fromPolyJsonArray(polyQueueJson);
+            if (polyQueue) {
+
+                game2.queuedPieces = polyQueue;
+                if (!game2Start) {
+                    game2.startGame();
+                    game2Start = true;
+                }
+            }
+
+
+        });
+
+        window.onkeydown = function (e) {
+            var key = e.keyCode ? e.keyCode : e.which;
+
+            var xMod = 0;
+            var yMod = 0;
+
+            if (!game1.paused && !game1.gameOver && game1.removingLinesFrames == 0) {
+                // up or space
+                if (key == 38 || key == 32) {
+                    game1.dropPiece();
+                }
+                // down
+                else if (key == 40) {
+                    yMod++;
+                }
+                // left
+                else if (key == 37) {
+                    xMod--;
+                }
+                // right
+                else if (key == 39) {
+                    xMod++;
+                }
+                // X
+                else if (key == 88) {
+                    game1.rotateCurrentPieceClockwise();
+                }
+                // Z
+                else if (key == 90) {
+                    game1.rotateCurrentPieceAntiClockwise();
+                }
+            }
+            // P
+            if (key == 80) {
+                game1.paused = !game1.paused;
+            }
+            if (xMod != 0 || yMod != 0) {
+                game1.moveCurrentPiece(xMod, yMod);
+            }
+            connection.invoke("SendCommand", "@ViewBag.PlayerId", `${key}`).catch(err => console.error(err.toString()));
+        }
+
+
+            game1.startGame();
+    }
+
+</script>

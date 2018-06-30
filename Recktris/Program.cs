@@ -7,11 +7,14 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Recktris.Service;
 
 namespace Recktris
 {
     public class Program
     {
+        public static GameService GameService { get; } = new GameService();
+
         public static void Main(string[] args)
         {
             CreateWebHostBuilder(args).Build().Run();

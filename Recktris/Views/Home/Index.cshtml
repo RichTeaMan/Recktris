@@ -1,0 +1,118 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h1>
+    <a href="/Polytris">Polytris</a>
+</h1>
+
+<div>
+    <p>Move pieces with the arrow keys. Rotate with Z and X. Pause with the P key.</p>
+</div>
+<div id="status"></div>
+<div id="game_row">
+    <div class="game_panel main_panel panel">
+        <canvas id="gtx" width="350" height="630"></canvas>
+    </div>
+    <div class="info_panel panel">
+        <div class="info_panel">
+            <p>Score:</p>
+            <p id="score" class="right-align"></p>
+        </div>
+        <div class="info_panel">
+            <p>Level:</p>
+            <p id="level" class="right-align"></p>
+        </div>
+        <div class="info_panel">
+            <p>Lines:</p>
+            <p id="lines_cleared" class="right-align"></p>
+        </div>
+        <div class="game_panel preview_panel">
+            <canvas id="preview_gtx" width="140" height="140"></canvas>
+        </div>
+    </div>
+</div>
+<script src="~/generatedJs/utilities.js"></script>
+<script src="~/generatedJs/poly.js"></script>
+<script src="~/generatedJs/game.js"></script>
+<script>
+
+
+    var links = "Poly size: ";
+    for (var i = 1; i < 10; i++) {
+        links += `<a href="${window.location.pathname}?polySize=${i}">${i}</a>`
+    }
+    $("#game_links").html(links);
+
+    var polySize = 4;
+    var polySizeQuery = getQueryParam("polySize");
+    var polySize = parseInt(polySizeQuery, 10);
+    if (isNaN(polySize)) {
+        polySize = 4;
+    }
+
+    var pieces = Poly.fromPolyJson([{ "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": -1, "y": 0 }], "_hashCode": -2074794077 }, { "blocks": [{ "x": -1, "y": 0 }, { "x": 0, "y": 0 }, { "x": -1, "y": 1 }, { "x": 1, "y": 0 }], "_hashCode": 493316036 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": 1, "y": 1 }], "_hashCode": 364263108 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": 1, "y": -1 }], "_hashCode": 1459856386 }, { "blocks": [{ "x": 0, "y": -1 }, { "x": 1, "y": -1 }, { "x": 0, "y": 0 }, { "x": 0, "y": 1 }], "_hashCode": -2054643644 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": 0, "y": 1 }, { "x": -1, "y": 1 }], "_hashCode": 45493122 }, { "blocks": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }, { "x": -1, "y": 0 }, { "x": 2, "y": 0 }], "_hashCode": 406158850 }]);
+
+    var game = new PolytrisGame(10, 18, pieces);
+    console.log("game start")
+    console.log(pieces);
+    game.startGame();
+    console.log("Game started");
+
+    function resize() {
+        var currentCanvasHeight = $("#game_row").height();
+
+        var blockLength = currentCanvasHeight / game.gridHeight;
+
+        var gameHeight = blockLength * game.gridHeight;
+        var gameWidth = blockLength * game.gridWidth;
+
+        console.log(`width: ${gameWidth} - height: ${gameHeight}`);
+        $("#gtx").attr("height", gameHeight);
+        $("#gtx").attr("width", gameWidth);
+        game.rebuildGtx();
+    };
+    window.onresize = resize;
+    resize();
+
+    window.onkeydown = function (e) {
+        var key = e.keyCode ? e.keyCode : e.which;
+
+        var xMod = 0;
+        var yMod = 0;
+
+        if (!game.paused && !game.gameOver && game.removingLinesFrames == 0) {
+            // up or space
+            if (key == 38 || key == 32) {
+                game.dropPiece();
+            }
+            // down
+            else if (key == 40) {
+                yMod++;
+            }
+            // left
+            else if (key == 37) {
+                xMod--;
+            }
+            // right
+            else if (key == 39) {
+                xMod++;
+            }
+            // X
+            else if (key == 88) {
+                game.rotateCurrentPieceClockwise();
+            }
+            // Z
+            else if (key == 90) {
+                game.rotateCurrentPieceAntiClockwise();
+            }
+        }
+        // P
+        if (key == 80) {
+            game.paused = !game.paused;
+        }
+        if (xMod != 0 || yMod != 0) {
+            game.moveCurrentPiece(xMod, yMod);
+        }
+    }
+</script>
